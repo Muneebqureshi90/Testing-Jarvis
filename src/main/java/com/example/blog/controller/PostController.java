@@ -1,6 +1,8 @@
 package com.example.blog.controller;
 
 import com.example.blog.model.dto.*;
+import com.example.blog.model.entity.User;
+import com.example.blog.repository.UserRepository;
 import com.example.blog.service.PostService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -8,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +26,27 @@ public class PostController {
     private static final Logger logger = LoggerFactory.getLogger(PostController.class);
 
     private final PostService postService;
+    private final UserRepository userRepository;
 
-    public PostController(PostService postService) {
+    public PostController(PostService postService, UserRepository userRepository) {
         this.postService = postService;
+        this.userRepository = userRepository;
+    }
+
+    private Long extractUserId(Authentication authentication) {
+        // The principal is UserDetails with username = actual username
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username))
+                .getId();
+    }
+
+    private Long extractUserId(@AuthenticationPrincipal UserDetails userDetails) {
+        // Fallback method using UserDetails
+        String username = userDetails.getUsername();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username))
+                .getId();
     }
 
     @GetMapping
@@ -57,7 +78,7 @@ public class PostController {
             @Valid @RequestBody CreatePostRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = Long.parseLong(userDetails.getUsername());
+        Long userId = extractUserId(userDetails);
         PostResponse post = postService.createPost(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
@@ -68,7 +89,7 @@ public class PostController {
             @Valid @RequestBody UpdatePostRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = Long.parseLong(userDetails.getUsername());
+        Long userId = extractUserId(userDetails);
         PostResponse post = postService.updatePost(id, request, userId);
         return ResponseEntity.ok(post);
     }
@@ -78,7 +99,7 @@ public class PostController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = Long.parseLong(userDetails.getUsername());
+        Long userId = extractUserId(userDetails);
         postService.deletePost(id, userId);
         return ResponseEntity.noContent().build();
     }

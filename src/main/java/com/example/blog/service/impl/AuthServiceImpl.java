@@ -10,6 +10,9 @@ import com.example.blog.service.mapper.BlogMapper;
 import com.example.blog.util.PasswordEncoderUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.authentication.BadCredentialsException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -25,11 +28,16 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
     private final BlogMapper blogMapper;
+    private final AuthenticationManager authenticationManager;
 
-    public AuthServiceImpl(UserRepository userRepository, JwtUtil jwtUtil, BlogMapper blogMapper) {
+    public AuthServiceImpl(UserRepository userRepository,
+                           JwtUtil jwtUtil,
+                           BlogMapper blogMapper,
+                           AuthenticationManager authenticationManager) {
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
         this.blogMapper = blogMapper;
+        this.authenticationManager = authenticationManager;
     }
 
     @Override
@@ -65,10 +73,14 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse authenticate(LoginRequest request) {
-        Authentication authentication = org.springframework.security.authentication.UsernamePasswordAuthenticationManager
-                .authenticate(request.getUsername(), request.getPassword());
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        try {
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword());
+            Authentication authentication = authenticationManager.authenticate(authToken);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (BadCredentialsException e) {
+            throw new RuntimeException("Invalid username or password", e);
+        }
 
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found after authentication"));

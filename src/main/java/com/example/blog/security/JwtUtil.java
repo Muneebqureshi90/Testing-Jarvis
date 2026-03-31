@@ -70,10 +70,7 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateAccessToken(Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        return generateTokenFromUsername(userDetails.getUsername(), Long.parseLong(userDetails.getUsername()));
-    }
+    // Removed broken generateAccessToken(Authentication) — use username+userId directly
 
     public String generateAccessToken(String username, Long userId) {
         Map<String, Object> claims = new HashMap<>();
