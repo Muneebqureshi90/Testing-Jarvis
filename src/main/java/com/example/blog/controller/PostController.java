@@ -12,7 +12,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/posts")
@@ -27,7 +29,7 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<Object> getAllPosts(
+    public ResponseEntity<Map<String, Object>> getAllPosts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
@@ -35,10 +37,13 @@ public class PostController {
             throw new IllegalArgumentException("Invalid pagination parameters");
         }
 
-        // Since list is small, return simple list for now (no pagination wrapper as per contract example)
-        // If pagination needed, wrap in PaginatedResponse
-        List<PostResponse> posts = postService.getAllPosts();
-        return ResponseEntity.ok(posts);
+        Page<PostResponse> pageResult = postService.getAllPosts(page, size);
+        Map<String, Object> response = new HashMap<>();
+        response.put("posts", pageResult.getContent());
+        response.put("total", pageResult.getTotalElements());
+        response.put("page", pageResult.getNumber());
+        response.put("size", pageResult.getSize());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")

@@ -73,8 +73,9 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found after authentication"));
 
-        String accessToken = jwtUtil.generateAccessToken(authentication);
-        String refreshToken = jwtUtil.generateRefreshToken(authentication);
+        // Generate tokens using username and userId
+        String accessToken = jwtUtil.generateAccessToken(user.getUsername(), user.getId());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getUsername(), user.getId());
 
         LoginResponse response = LoginResponse.builder()
                 .accessToken(accessToken)

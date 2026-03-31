@@ -1,11 +1,23 @@
-import { Provider } from 'react-redux';
+import { useEffect } from 'react';
+import { Provider, useDispatch } from 'react-redux';
 import { store } from './store';
+import { initializeAuth } from './store/slices/authSlice';
 import AppRouter from './routes/AppRouter';
+
+function AppInitializer() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(initializeAuth());
+  }, [dispatch]);
+
+  return <AppRouter />;
+}
 
 function App() {
   return (
     <Provider store={store}>
-      <AppRouter />
+      <AppInitializer />
     </Provider>
   );
 }
