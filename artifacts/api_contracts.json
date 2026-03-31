@@ -1,0 +1,896 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Secure Blog REST API",
+    "description": "A secure, production-ready blogging REST API with JWT authentication, user management, and full CRUD operations for blog posts. Built with Spring Boot and MySQL.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Muneeb Qureshi",
+      "url": "https://github.com/Muneebqureshi90/Testing-Jarvis"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Development server (relative path)"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User registration, login, and JWT token management"
+    },
+    {
+      "name": "Posts",
+      "description": "Blog post operations (CRUD)"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register a new user account",
+        "description": "Creates a new user account with username, email, and password. Password is automatically BCrypt-encoded. Returns user data without the password field.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterUserRequest"
+              },
+              "example": {
+                "username": "johndoe",
+                "email": "john@example.com",
+                "password": "SecurePassword123!",
+                "firstName": "John",
+                "lastName": "Doe",
+                "phone": "+1234567890"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User successfully registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "id": 1,
+                  "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                  "username": "johndoe",
+                  "email": "john@example.com",
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "phone": "+1234567890",
+                  "isActive": true,
+                  "isVerified": false,
+                  "createdAt": "2025-01-15T10:30:00Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input or duplicate username/email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "timestamp": "2025-01-15T10:30:00Z",
+                  "status": 400,
+                  "error": "Bad Request",
+                  "message": "Username already exists",
+                  "path": "/api/auth/register"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "User login with credentials",
+        "description": "Authenticates user with username and password. Upon successful authentication, returns a JWT access token and refresh token.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "username": "johndoe",
+                "password": "SecurePassword123!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                },
+                "example": {
+                  "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
+                  "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
+                  "tokenType": "Bearer",
+                  "expiresIn": 86400,
+                  "user": {
+                    "id": 1,
+                    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                    "username": "johndoe",
+                    "email": "john@example.com",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "isActive": true,
+                    "isVerified": false
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "timestamp": "2025-01-15T10:30:00Z",
+                  "status": 401,
+                  "error": "Unauthorized",
+                  "message": "Invalid username or password",
+                  "path": "/api/auth/login"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Refresh JWT access token",
+        "description": "Uses a valid refresh token to obtain a new access token. The refresh token itself is also rotated for enhanced security.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              },
+              "example": {
+                "refreshToken": "eyJhbGciOiJIUzUxMiJ9..."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or expired refresh token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "timestamp": "2025-01-15T10:30:00Z",
+                  "status": 401,
+                  "error": "Unauthorized",
+                  "message": "Invalid refresh token",
+                  "path": "/api/auth/refresh"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/posts": {
+      "get": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "List all blog posts",
+        "description": "Retrieves a list of all blog posts. Returns an array of posts with author information. This endpoint is publicly accessible (no authentication required). Optionally supports pagination via query parameters.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (starting from 0). Optional.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Number of posts per page. Optional, max 100.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of posts retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PostResponse"
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of posts"
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "size": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "posts": [
+                    {
+                      "id": 1,
+                      "title": "My First Blog Post",
+                      "content": "This is the content of my first blog post...",
+                      "author": {
+                        "id": 1,
+                        "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                        "username": "johndoe",
+                        "email": "john@example.com",
+                        "firstName": "John",
+                        "lastName": "Doe"
+                      },
+                      "published": true,
+                      "createdAt": "2025-01-15T10:30:00Z",
+                      "updatedAt": "2025-01-15T10:30:00Z"
+                    }
+                  ],
+                  "total": 1,
+                  "page": 0,
+                  "size": 20
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Create a new blog post",
+        "description": "Creates a new blog post with the authenticated user as the author. Requires JWT authentication. The post is initially unpublished by default unless explicitly set.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePostRequest"
+              },
+              "example": {
+                "title": "My New Blog Post",
+                "content": "This is the detailed content of my new blog post. It supports long-form text and can include HTML formatting.",
+                "published": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Post created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponse"
+                },
+                "example": {
+                  "id": 1,
+                  "title": "My New Blog Post",
+                  "content": "This is the detailed content of my new blog post. It supports long-form text and can include HTML formatting.",
+                  "author": {
+                    "id": 1,
+                    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                    "username": "johndoe",
+                    "email": "john@example.com",
+                    "firstName": "John",
+                    "lastName": "Doe"
+                  },
+                  "published": false,
+                  "createdAt": "2025-01-15T10:30:00Z",
+                  "updatedAt": "2025-01-15T10:30:00Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/posts/{id}": {
+      "get": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Get a single blog post by ID",
+        "description": "Retrieves a specific blog post by its unique identifier. Returns 404 if post does not exist. This endpoint is publicly accessible.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Post ID (numeric)",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Update an existing blog post",
+        "description": "Updates a blog post with new data. Only the author of the post can update it. Returns 403 if user is not the author. Returns 404 if post does not exist.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Post ID to update",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePostRequest"
+              },
+              "example": {
+                "title": "Updated Blog Post Title",
+                "content": "Updated content for the blog post...",
+                "published": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Post updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - User is not the author of this post",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "timestamp": "2025-01-15T10:30:00Z",
+                  "status": 403,
+                  "error": "Forbidden",
+                  "message": "You cannot edit posts you do not own",
+                  "path": "/api/posts/1"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Delete a blog post",
+        "description": "Permanently deletes a blog post. Only the author can delete their post. Returns 403 if user is not the author. Returns 204 on success (no content).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Post ID to delete",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Post deleted successfully (no content)"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - User is not the author of this post",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "timestamp": "2025-01-15T10:30:00Z",
+                  "status": 403,
+                  "error": "Forbidden",
+                  "message": "You cannot delete posts you do not own",
+                  "path": "/api/posts/1"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your JWT token in the format: Bearer <token>"
+      }
+    },
+    "schemas": {
+      "RegisterUserRequest": {
+        "type": "object",
+        "required": [
+          "username",
+          "email",
+          "password",
+          "firstName",
+          "lastName"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 50,
+            "description": "Unique username for login (alphanumeric, 3-50 characters)"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 255,
+            "description": "User's email address, must be unique"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "description": "Password (minimum 8 characters, strong recommended)"
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "User's first name"
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "User's last name"
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Phone number (optional, E.164 format recommended)"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username for authentication"
+          },
+          "password": {
+            "type": "string",
+            "description": "User's password"
+          }
+        }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "required": [
+          "refreshToken"
+        ],
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Valid refresh token for obtaining new access token"
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "User's unique database ID"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Globally unique user identifier"
+          },
+          "username": {
+            "type": "string",
+            "description": "Username"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "First name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Last name"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Phone number (may be null)"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the user account is active"
+          },
+          "isVerified": {
+            "type": "boolean",
+            "description": "Whether the user's email is verified"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Account creation timestamp"
+          }
+        }
+      },
+      "AuthorInfo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          }
+        }
+      },
+      "CreatePostRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "content"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Post title"
+          },
+          "content": {
+            "type": "string",
+            "description": "Full content of the blog post (supports long-form text)"
+          },
+          "published": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the post is published (true) or remains a draft (false)"
+          }
+        }
+      },
+      "UpdatePostRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "content"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Updated post title"
+          },
+          "content": {
+            "type": "string",
+            "description": "Updated content of the blog post"
+          },
+          "published": {
+            "type": "boolean",
+            "description": "Updated published status"
+          }
+        }
+      },
+      "PostResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "content": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/AuthorInfo"
+          },
+          "published": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "JWT access token (expires in expiresIn seconds)"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "JWT refresh token for obtaining new access tokens"
+          },
+          "tokenType": {
+            "type": "string",
+            "enum": [
+              "Bearer"
+            ]
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "Access token expiration time in seconds (default: 86400)"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "timestamp",
+          "status",
+          "error",
+          "message",
+          "path"
+        ],
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        }
+      },
+      "PaginatedResponse": {
+        "type": "object",
+        "properties": {
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostResponse"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad Request - Invalid input data",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized - Missing or invalid JWT token",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "timestamp": "2025-01-15T10:30:00Z",
+              "status": 401,
+              "error": "Unauthorized",
+              "message": "Invalid or missing JWT token",
+              "path": "/api/posts"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not Found - Requested resource does not exist",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "timestamp": "2025-01-15T10:30:00Z",
+              "status": 404,
+              "error": "Not Found",
+              "message": "Post not found with id: 999",
+              "path": "/api/posts/999"
+            }
+          }
+        }
+      }
+    }
+  }
+}

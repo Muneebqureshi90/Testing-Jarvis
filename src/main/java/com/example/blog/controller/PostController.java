@@ -1,0 +1,80 @@
+package com.example.blog.controller;
+
+import com.example.blog.model.dto.*;
+import com.example.blog.service.PostService;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/posts")
+public class PostController {
+
+    private static final Logger logger = LoggerFactory.getLogger(PostController.class);
+
+    private final PostService postService;
+
+    public PostController(PostService postService) {
+        this.postService = postService;
+    }
+
+    @GetMapping
+    public ResponseEntity<Object> getAllPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        if (page < 0 || size < 1 || size > 100) {
+            throw new IllegalArgumentException("Invalid pagination parameters");
+        }
+
+        // Since list is small, return simple list for now (no pagination wrapper as per contract example)
+        // If pagination needed, wrap in PaginatedResponse
+        List<PostResponse> posts = postService.getAllPosts();
+        return ResponseEntity.ok(posts);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PostResponse> getPost(@PathVariable Long id) {
+        PostResponse post = postService.getPostById(id);
+        return ResponseEntity.ok(post);
+    }
+
+    @PostMapping
+    public ResponseEntity<PostResponse> createPost(
+            @Valid @RequestBody CreatePostRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = Long.parseLong(userDetails.getUsername());
+        PostResponse post = postService.createPost(request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(post);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PostResponse> updatePost(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdatePostRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = Long.parseLong(userDetails.getUsername());
+        PostResponse post = postService.updatePost(id, request, userId);
+        return ResponseEntity.ok(post);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePost(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        Long userId = Long.parseLong(userDetails.getUsername());
+        postService.deletePost(id, userId);
+        return ResponseEntity.noContent().build();
+    }
+}

@@ -1,0 +1,31 @@
+# Test configuration for H2 in-memory database
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        generate_statistics: true
+        format_sql: true
+
+# JWT secret for tests (256-bit)
+app:
+  jwt:
+    secret: test-secret-key-for-junit-tests-only-32-bytes-long!!
+    expiration-ms: 86400000
+    refresh-expiration-ms: 604800000
+
+# Logging
+logging:
+  level:
+    com.example.blog: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
